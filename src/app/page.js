@@ -9,6 +9,12 @@ const columnColors = {
   3: 'bg-blue-600',
 };
 
+const columnSelectors = [
+  { columnNumber: 1, title: 'Selecteaza coloana cod de bare' },
+  { columnNumber: 2, title: 'Selecteaza coloana cantitate' },
+  { columnNumber: 3, title: 'Selecteaza coloana discount' },
+];
+
 const cellTextColor = (column, selectedColumns) => {
   const columnNumber = Object.keys(selectedColumns).find(columnNumber => selectedColumns[columnNumber] === column);
   if (!columnNumber) return '';
@@ -191,8 +197,20 @@ export default function Home() {
           onChange={handleFileUpload}
         />
         <button
+          onClick={() => setUnselectedRows({})}
+          className={'mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded'}
+        >
+          Selecteaza toate
+        </button>
+        <button
+          onClick={() => setUnselectedRows(validRows)}
+          className={'mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded'}
+        >
+          Deselecteaza toate
+        </button>
+        <button
           onClick={() => saveToFile(aoa, 'discounts.xlsx')}
-          className={`${exportButtonDisabled ? 'bg-slate-300' : 'bg-blue-500 hover:bg-blue-700'} text-white font-bold py-1 px-4 rounded`}
+          className={`${exportButtonDisabled ? 'bg-slate-300' : 'bg-green-500 hover:bg-green-700'} mx-1 text-white font-bold py-1 px-4 rounded`}
           disabled={exportButtonDisabled}
         >
           Export
@@ -209,8 +227,15 @@ export default function Home() {
                     <div className="flex items-stretch">
                       <div className="flex flex-1 justify-center items-center px-1 py-1">{column}</div>
                       <div className="flex flex-col items-stretch bg-white text-sm">
-                        {[1, 2, 3].map(columnNumber => (
-                          <div key={`${columnNumber}`} className={`flex-1 px-1 cursor-pointer ${selectedColumns[columnNumber] === column ? columnColors[columnNumber] : 'hover:bg-blue-100'}`} onClick={() => selectColumn(columnNumber, column)}>{columnNumber}</div>
+                        {columnSelectors.map(({ columnNumber, title }) => (
+                          <div
+                            key={`${columnNumber}`}
+                            className={`flex-1 px-1 cursor-pointer ${selectedColumns[columnNumber] === column ? columnColors[columnNumber] : 'hover:bg-blue-100'}`}
+                            onClick={() => selectColumn(columnNumber, column)}
+                            title={title}
+                          >
+                            {columnNumber}
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -222,8 +247,9 @@ export default function Home() {
               {data.map((row, index) => (
                 <tr
                   key={index}
-                  className={validRows[index] ? 'cursor-pointer hover:opacity-50' : 'bg-slate-100 text-gray-300'}
+                  className={validRows[index] ? 'cursor-pointer hover:opacity-50' : 'bg-slate-100 text-gray-400'}
                   onClick={() => toggleRow(index)}
+                  title={validRows[index] ? 'Click ca sa selectezi / deselectezi randul' : ''}
                 >
                   {columns.map(column => (
                     <td key={`${column}${index}`} className={`border px-1 py-1${validRows[index] && !unselectedRows[index] ? cellTextColor(column, selectedColumns) : ''}`}>{row[column]}</td>
