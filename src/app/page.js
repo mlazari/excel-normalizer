@@ -22,7 +22,7 @@ const cellTextColor = (column, selectedColumns) => {
 };
 
 const isBarCode = x => /^[0-9]{7,13}$/.test(String(x));
-const isQuantity = x => !!x && !isBarCode(x) && Number.isInteger(Number(x));
+const isQuantity = x => !isBarCode(x) && !Number.isNaN(Number(x));
 const isDiscount = x => !isBarCode(x) && !Number.isNaN(Number(x));
 
 const isValidRow = (row, column1, column2, column3) => {
