@@ -21,7 +21,7 @@ const cellTextColor = (column, selectedColumns) => {
   return ` ${columnColors[columnNumber]}`;
 };
 
-const isBarCode = x => /^[0-9]{7,13}$/.test(String(x));
+const isBarCode = x => /^[0-9]{7,13}$/.test(String(x).trim());
 const isQuantity = x => !isBarCode(x) && !Number.isNaN(Number(x));
 const isDiscount = x => !isBarCode(x) && !Number.isNaN(Number(x));
 
@@ -108,7 +108,7 @@ const getAoa = (data, selectedColumns, unselectedRows, validRows) => {
     if (!validRows[i] || unselectedRows[i]) continue;
     aoa.push([
       '',
-      data[i][selectedColumns[1]],
+      { f: `"${String(data[i][selectedColumns[1]]).trim()}"` },
       '',
       '',
       data[i][selectedColumns[2]],
