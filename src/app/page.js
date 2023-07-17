@@ -38,22 +38,75 @@ const compareColumns = (column1, column2) => {
   return column1.length < column2.length ? -1 : 1;
 };
 
+const includesAny = (str, substrs) => {
+  if (typeof str !== 'string') {
+    return false;
+  }
+  for (let substr of substrs) {
+    if (str.toLowerCase().includes(substr)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const guessColumnsByHeader = data => {
+  let barCodeColumn = null, quantityColumn = null, discountColumn = null;
+  for (let i = 0; i < data.length; ++i) {
+    if (barCodeColumn) break;
+    if (Object.keys(data[i]).length < 3) continue;
+    for (let col in data[i]) {
+      if (includesAny(data[i][col], ['bare', 'штрих'])) {
+        barCodeColumn = col;
+        for (let col2 in data[i]) {
+          if (col2 === barCodeColumn) continue;
+          if (includesAny(data[i][col2], ['cantitate', 'cant.', ',buc', ', buc', 'количество', 'кол-во', ',шт', ', шт'])) {
+            quantityColumn = col2;
+            for (let col3 in data[i]) {
+              if (col3 === barCodeColumn || col3 === quantityColumn) continue;
+              if (includesAny(data[i][col3], ['reducere', 'discount', 'скидка', 'сумма скидки', 'diferen', 'разниц'])) {
+                if (!discountColumn || data[i][col3].length < data[i][discountColumn].length) {
+                  discountColumn = col3;
+                }
+              }
+            }
+            break;
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  return {
+    1: barCodeColumn,
+    2: quantityColumn,
+    3: discountColumn,
+  };
+};
+
 const guessColumns = (data, columns) => {
   if (!data || !columns) return {};
+
+  const columnsByHeader = guessColumnsByHeader(data);
 
   let max = 0;
   let barCodeColumn = null, quantityColumn = null, discountColumn = null;
 
-  columns.forEach(column => {
-    let cnt = 0;
-    for (let i = 0; i < data.length; ++i) {
-      if (isBarCode(data[i][column])) ++cnt;
-    }
-    if (!barCodeColumn || cnt > max) {
-      max = cnt;
-      barCodeColumn = column;
-    }
-  });
+  if (columnsByHeader[1]) {
+    barCodeColumn = columnsByHeader[1];
+  } else {
+    columns.forEach(column => {
+      let cnt = 0;
+      for (let i = 0; i < data.length; ++i) {
+        if (isBarCode(data[i][column])) ++cnt;
+      }
+      if (!barCodeColumn || cnt > max) {
+        max = cnt;
+        barCodeColumn = column;
+      }
+    });
+  }
 
   if (!barCodeColumn) {
     return {};
@@ -61,17 +114,21 @@ const guessColumns = (data, columns) => {
 
   max = 0;
 
-  columns.forEach(column => {
-    if (column === barCodeColumn) return;
-    let cnt = 0;
-    for (let i = 0; i < data.length; ++i) {
-      if (isBarCode(data[i][barCodeColumn]) && isQuantity(data[i][column])) ++cnt;
-    }
-    if (!quantityColumn || cnt > max) {
-      max = cnt;
-      quantityColumn = column;
-    }
-  });
+  if (columnsByHeader[2]) {
+    quantityColumn = columnsByHeader[2];
+  } else {
+    columns.forEach(column => {
+      if (column === barCodeColumn) return;
+      let cnt = 0;
+      for (let i = 0; i < data.length; ++i) {
+        if (isBarCode(data[i][barCodeColumn]) && isQuantity(data[i][column])) ++cnt;
+      }
+      if (!quantityColumn || cnt > max) {
+        max = cnt;
+        quantityColumn = column;
+      }
+    });
+  }
 
   if (!quantityColumn) {
     return {};
@@ -79,17 +136,21 @@ const guessColumns = (data, columns) => {
 
   max = 0;
 
-  columns.forEach(column => {
-    if (column === barCodeColumn || column === quantityColumn) return;
-    let cnt = 0;
-    for (let i = 0; i < data.length; ++i) {
-      if (isBarCode(data[i][barCodeColumn]) && isQuantity(data[i][quantityColumn]) && isDiscount(data[i][column])) ++cnt;
-    }
-    if (!discountColumn || cnt > max) {
-      max = cnt;
-      discountColumn = column;
-    }
-  });
+  if (columnsByHeader[3]) {
+    discountColumn = columnsByHeader[3];
+  } else {
+    columns.forEach(column => {
+      if (column === barCodeColumn || column === quantityColumn) return;
+      let cnt = 0;
+      for (let i = 0; i < data.length; ++i) {
+        if (isBarCode(data[i][barCodeColumn]) && isQuantity(data[i][quantityColumn]) && isDiscount(data[i][column])) ++cnt;
+      }
+      if (!discountColumn || cnt > max) {
+        max = cnt;
+        discountColumn = column;
+      }
+    });
+  }
   
   if (!discountColumn) {
     return {};
@@ -103,7 +164,8 @@ const guessColumns = (data, columns) => {
 };
 
 const getAoa = (data, selectedColumns, unselectedRows, validRows) => {
-  let aoa = [[], []];
+  const validSelectedRowsCount = data.filter((_, i) => validRows[i] && !unselectedRows[i]).length;
+  let aoa = [[{ f: `SUM(F3:F${validSelectedRowsCount + 2})` }], []];
   for (let i = 0; i < data.length; ++i) {
     if (!validRows[i] || unselectedRows[i]) continue;
     aoa.push([
@@ -111,8 +173,8 @@ const getAoa = (data, selectedColumns, unselectedRows, validRows) => {
       { f: `"${String(data[i][selectedColumns[1]]).trim()}"` },
       '',
       '',
-      data[i][selectedColumns[2]],
-      data[i][selectedColumns[3]]
+      Math.abs(Number(data[i][selectedColumns[2]])),
+      Math.abs(Number(data[i][selectedColumns[3]]))
     ]);
   }
   return aoa.length > 2 ? aoa : [];
@@ -167,15 +229,19 @@ export default function Home() {
 
   const aoa = useMemo(() => getAoa(data, selectedColumns, unselectedRows, validRows), [data, selectedColumns, unselectedRows, validRows]);
 
+  const [outputFileName, setOutputFileName] = useState('discounts.xlsx');
+
   const handleFileUpload = useCallback(e => {
     const reader = new FileReader();
+    const outputTitle = e.target.files[0].name.toLowerCase().endsWith('.xlsx') ? `discounts-${e.target.files[0].name}` : `discounts-${e.target.files[0].name}.xlsx`;
+    setOutputFileName(outputTitle);
     reader.readAsBinaryString(e.target.files[0]);
     reader.onload = e => {
       const data = e.target.result;
       const workbook = XLSX.read(data, { type: 'binary'});
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
-      const parsedData = XLSX.utils.sheet_to_json(sheet, { header: 'A' });
+      const parsedData = XLSX.utils.sheet_to_json(sheet, { header: 'A', raw: false });
       setSelectedColumns({});
       setUnselectedRows({});
       setData(parsedData);
@@ -196,25 +262,29 @@ export default function Home() {
           accept=".xlsx, .xls"
           onChange={handleFileUpload}
         />
-        <button
-          onClick={() => setUnselectedRows({})}
-          className={'mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded'}
-        >
-          Selecteaza toate
-        </button>
-        <button
-          onClick={() => setUnselectedRows(validRows)}
-          className={'mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded'}
-        >
-          Deselecteaza toate
-        </button>
-        <button
-          onClick={() => saveToFile(aoa, 'discounts.xlsx')}
-          className={`${exportButtonDisabled ? 'bg-slate-300' : 'bg-green-500 hover:bg-green-700'} mx-1 text-white font-bold py-1 px-4 rounded`}
-          disabled={exportButtonDisabled}
-        >
-          Export
-        </button>
+        {data.length > 0 && (
+          <>
+            <button
+              onClick={() => setUnselectedRows({})}
+              className={'mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded'}
+            >
+              Selecteaza toate
+            </button>
+            <button
+              onClick={() => setUnselectedRows(validRows)}
+              className={'mx-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded'}
+            >
+              Deselecteaza toate
+            </button>
+            <button
+              onClick={() => saveToFile(aoa, outputFileName)}
+              className={`${exportButtonDisabled ? 'bg-slate-300' : 'bg-green-500 hover:bg-green-700'} mx-1 text-white font-bold py-1 px-4 rounded`}
+              disabled={exportButtonDisabled}
+            >
+              Export
+            </button>
+          </>
+        )}
       </div>
 
       {!!columns && (
