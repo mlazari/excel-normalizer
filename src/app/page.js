@@ -22,8 +22,8 @@ const cellTextColor = (column, selectedColumns) => {
 };
 
 const isBarCode = x => /^[0-9]{7,13}$/.test(String(x).trim());
-const isQuantity = x => !isBarCode(x) && !Number.isNaN(Number(x));
-const isDiscount = x => !isBarCode(x) && !Number.isNaN(Number(x));
+const isQuantity = x => !isBarCode(x) && !Number.isNaN(Number(String(x).trim()));
+const isDiscount = x => !isBarCode(x) && !Number.isNaN(Number(String(x).trim()));
 
 const isValidRow = (row, column1, column2, column3) => {
   if (!row || !column1 || !column2 || !column3) return false;
@@ -167,14 +167,16 @@ const getAoa = (data, selectedColumns, unselectedRows, validRows) => {
   const validSelectedRowsCount = data.filter((_, i) => validRows[i] && !unselectedRows[i]).length;
   let aoa = [[{ f: `SUM(F3:F${validSelectedRowsCount + 2})` }], []];
   for (let i = 0; i < data.length; ++i) {
-    if (!validRows[i] || unselectedRows[i]) continue;
+    if (!validRows[i] || unselectedRows[i]) {
+      continue;
+    }
     aoa.push([
       '',
       { f: `"${String(data[i][selectedColumns[1]]).trim()}"` },
       '',
       '',
-      Math.abs(Number(data[i][selectedColumns[2]])),
-      Math.abs(Number(data[i][selectedColumns[3]]))
+      Math.abs(Number(String(data[i][selectedColumns[2]]).trim())),
+      Math.abs(Number(String(data[i][selectedColumns[3]]).trim()))
     ]);
   }
   return aoa.length > 2 ? aoa : [];
