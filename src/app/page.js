@@ -60,7 +60,7 @@ const guessColumnsByHeader = data => {
         barCodeColumn = col;
         for (let col2 in data[i]) {
           if (col2 === barCodeColumn) continue;
-          if (includesAny(data[i][col2], ['cantitate', 'cant.', ',buc', ', buc', 'количество', 'кол-во', ',шт', ', шт'])) {
+          if (includesAny(data[i][col2], ['cantitate', 'cant.', ',buc', ', buc', 'количество', 'кол-во', 'колво', ',шт', ', шт'])) {
             quantityColumn = col2;
             for (let col3 in data[i]) {
               if (col3 === barCodeColumn || col3 === quantityColumn) continue;
