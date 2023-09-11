@@ -21,6 +21,15 @@ const cellTextColor = (column, selectedColumns) => {
   return ` ${columnColors[columnNumber]}`;
 };
 
+const getSelectedColumnNumber = (column, selectedColumns) => {
+  for (let columnNumber in selectedColumns) {
+    if (selectedColumns[columnNumber] === column) {
+      return columnNumber;
+    }
+  }
+  return 0;
+};
+
 const isBarCode = x => /^[0-9]{7,13}$/.test(String(x).trim());
 const isQuantity = x => !isBarCode(x) && !Number.isNaN(Number(String(x).trim()));
 const isDiscount = x => !isBarCode(x) && !Number.isNaN(Number(String(x).trim()));
@@ -299,16 +308,26 @@ export default function Home() {
                     <div className="flex items-stretch">
                       <div className="flex flex-1 justify-center items-center px-1 py-1">{column}</div>
                       <div className="flex flex-col items-stretch bg-white text-sm">
-                        {columnSelectors.map(({ columnNumber, title }) => (
-                          <div
-                            key={`${columnNumber}`}
-                            className={`flex-1 px-1 cursor-pointer ${selectedColumns[columnNumber] === column ? columnColors[columnNumber] : 'hover:bg-blue-100'}`}
-                            onClick={() => selectColumn(columnNumber, column)}
-                            title={title}
-                          >
-                            {columnNumber}
-                          </div>
-                        ))}
+                        <select
+                          value={getSelectedColumnNumber(column, selectedColumns)}
+                          onChange={e => selectColumn(e.target.value, column)}
+                          className="h-full"
+                        >
+                          <option
+                            value={0}
+                            title={'Deselectează'}
+                          />
+                          {columnSelectors.map(({ columnNumber, title }) => (
+                            <option
+                              key={`${columnNumber}`}
+                              value={columnNumber}
+                              title={title}
+                              className={`appearance-none ${columnColors[columnNumber]}`}
+                            >
+                              {columnNumber}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </th>
