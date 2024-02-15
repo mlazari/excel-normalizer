@@ -21,7 +21,7 @@ const isValidRow = row =>
   isDocumentNumber(row[4]);
 
 const parsePdfText = pdfText => {
-  const pdfRows = [...pdfText.matchAll(/(Calculat|Pl\.Virament)\s+([^\s]+)\s+([^\s]+)\s+(?:[^\s]+)\s+(?:[^\s]+(?:\s+[^\s]+)?)\s+(\d+\.\d+)/g)];
+  const pdfRows = [...pdfText.matchAll(/(Calculat|Pl\.Virament)\s+([^\s]+)\s+([^\s]+)\s+(?:[^\s\.]+(?:\s+[^\s\.]+)?)\s+(?:[^\s\.]+(?:\s+[^\s\.]+)?)\s+(\d+\.\d+)/g)];
   let pdfData = {};
   pdfRows.forEach(pdfRow => {
     let [, documentType, documentNumber, date, sum] = pdfRow;
@@ -40,7 +40,7 @@ const getDocNumberFromPdf = (pdfData, docNumberInExcel, dateInExcel, sumInExcel,
   if (shouldMatchByDateAndSumOnly) {
     docNumberInPdf = Object.keys(pdfData).find(docNr => pdfData[docNr].date === dateInExcel && Math.abs(pdfData[docNr].sum - sumInExcel) <= 400) ?? null;
   } else {
-    const docNumberSuffix = docNumberInExcel.match(/^[A-Z]0?(\d+)$/)?.[1];
+    const docNumberSuffix = docNumberInExcel.match(/^([A-Z]\d+)$/)?.[1];
     if (docNumberSuffix) {
       docNumberInPdf = Object.keys(pdfData).find(docNr => docNr.endsWith(docNumberSuffix) && pdfData[docNr].date === dateInExcel) ?? null;
     }
