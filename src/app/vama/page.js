@@ -40,9 +40,18 @@ const getDocNumberFromPdf = (pdfData, docNumberInExcel, dateInExcel, sumInExcel,
   if (shouldMatchByDateAndSumOnly) {
     docNumberInPdf = Object.keys(pdfData).find(docNr => pdfData[docNr].date === dateInExcel && Math.abs(pdfData[docNr].sum - sumInExcel) <= 400) ?? null;
   } else {
-    const docNumberSuffix = docNumberInExcel.match(/^([A-Z]\d+)$/)?.[1];
-    if (docNumberSuffix) {
-      docNumberInPdf = Object.keys(pdfData).find(docNr => docNr.endsWith(docNumberSuffix) && pdfData[docNr].date === dateInExcel) ?? null;
+    const docNumberSuffixMatchResult = docNumberInExcel.match(/([A-Z])0*([1-9]\d+)$/);
+    if (docNumberSuffixMatchResult) {
+      const docNumberSuffixWithoutLeadingZeros = `${docNumberSuffixMatchResult[1]}${docNumberSuffixMatchResult[2]}`;
+      docNumberInPdf = Object.keys(pdfData).find(pdfDocNr => {
+        const pdfDocNrSuffixMatchResult = pdfDocNr.match(/([A-Z])0*([1-9]\d+)$/);
+        if (pdfDocNrSuffixMatchResult) {
+          const pdfDocNrSuffixWithoutLeadingZeros = `${pdfDocNrSuffixMatchResult[1]}${pdfDocNrSuffixMatchResult[2]}`;
+          const isTheSameDoc = docNumberSuffixWithoutLeadingZeros === pdfDocNrSuffixWithoutLeadingZeros && pdfData[pdfDocNr].date === dateInExcel;
+          return isTheSameDoc;
+        }
+        return false;
+      }) ?? null;
     }
   }
 
