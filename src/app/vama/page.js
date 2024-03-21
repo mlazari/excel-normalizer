@@ -6,7 +6,12 @@ import extractTextFromPDF from 'pdf-parser-client-side';
 
 const trimString = x => typeof x === 'string' ? x.trim() : x;
 
-const isNumber = x => typeof x === 'number' && isFinite(x);
+const isNumber = x => {
+  if (typeof x !== 'number') {
+    x = parseInt(x, 10);
+  }
+  return typeof x === 'number' && isFinite(x);
+};
 const isDate = x => typeof x === 'string' && /^\d{1,2}\.\d{1,2}\.\d{2,4}$/g.test(x);
 const isCustomDeclaration = x => x === 'Таможенная декларация';
 const isBankOperation = x => x === 'Банковская операция (расход)';
