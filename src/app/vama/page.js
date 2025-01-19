@@ -104,18 +104,18 @@ const saveToFile = (pdfText, excelData, fileName) => {
     ]
   ];
   for (let i = 0; i < excelData.parsedData.length; ++i) {
-    const documentNumber = trimString(excelData.parsedData[i].J);
-    const docDate = trimString(excelData.parsedData[i].B);
-    const docType = trimString(excelData.parsedData[i].D);
-    const docSum = excelData.parsedDataRaw[i].AE;
+    const documentNumber = trimString(excelData.parsedData[i].K);
+    const docDate = trimString(excelData.parsedData[i].C);
+    const docType = trimString(excelData.parsedData[i].E);
+    const docSum = excelData.parsedDataRaw[i].AF;
     let documentNumberInPdf = isCustomDeclaration(docType) ? getDocNumberFromPdf(pdfData, documentNumber, docDate, docSum, false) : null;
     const row = [
       '',
-      excelData.parsedDataRaw[i].A,
+      excelData.parsedDataRaw[i].B,
       docDate,
       docType,
       documentNumber,
-      excelData.parsedDataRaw[i].AA,
+      excelData.parsedDataRaw[i].AB,
       docSum,
       pdfData[documentNumberInPdf]?.sum,
       '',
