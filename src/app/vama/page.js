@@ -26,10 +26,11 @@ const isValidRow = row =>
   isDocumentNumber(row[4]);
 
 const parsePdfText = pdfText => {
-  const pdfRows = [...pdfText.matchAll(/(Calculat|Pl\.Virament)\s+([^\s]+)\s+([^\s]+)\s+(?:[^\s\.]+(?:\s+[^\s\.]+)?)\s+(?:[^\s\.]+(?:\s+[^\s\.]+)?)\s+(\d+\.\d+)/g)];
+  const pdfRows = [...pdfText.matchAll(/(Calculat|Pl\.Virament)\s+([^\s]+)\s+([^\s]+)\s+(?:[^\s\.]+(?:\s+[^\s\.]+)?)\s+(?:[^\s\.]+(?:\s+[^\s\.]+)?)\s+(\d+[\.,]\d+)\s/g)];
   let pdfData = {};
   pdfRows.forEach(pdfRow => {
     let [, documentType, documentNumber, date, sum] = pdfRow;
+    sum = sum.replaceAll(',', '.');
     sum = Number(sum) + (pdfData[documentNumber]?.sum ?? 0);
     pdfData[documentNumber] = {
       documentType,
